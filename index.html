@@ -26,9 +26,7 @@
     background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px;margin-bottom:12px;
     display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center
   }
-  .side{
-    display:grid;gap:6px;justify-items:center
-  }
+  .side{display:grid;gap:6px;justify-items:center}
   .side .label{font-size:12px;color:var(--muted)}
   .count{
     min-width:54px;text-align:center;font-weight:800;font-size:18px;color:var(--text);
@@ -37,6 +35,9 @@
   .line{font-size:17px;line-height:1.4;word-break:break-word}
   .meta{color:var(--muted);font-size:13px;margin-top:6px}
   .pill{display:inline-block;border:1px solid var(--border);padding:6px 10px;border-radius:999px;font-size:13px;background:#fff;margin-right:6px}
+
+  /* knoppenrij rechts voor gelukt */
+  .ok-buttons{display:grid;grid-auto-flow:column;gap:6px;align-items:center}
 
   /* Overzicht onderaan */
   .summary{margin:24px 0 12px}
@@ -51,7 +52,7 @@
 <body>
 <header>
   <h1>Koekje Upsell Teller</h1>
-  <div class="sub">Links = mislukt (−1), rechts = gelukt (+1). Alles wordt lokaal bewaard op dit toestel.</div>
+  <div class="sub">Links = mislukt (−1 voegt mislukking toe), rechts = gelukt (+1). Alles wordt lokaal bewaard op dit toestel.</div>
 </header>
 
 <div class="wrap">
@@ -74,7 +75,7 @@
 
 <script>
 (function(){
-  const KEY = "koekje_upsell_tracker_dual_v1";
+  const KEY = "koekje_upsell_tracker_dual_v2";
   const LINES = [
     "Zal ik er een lekker koekje bij doen? Vandaag maar één euro.",
     "Vandaag zijn de koekjes in de aanbieding — €1 in plaats van €2!",
@@ -93,14 +94,12 @@
     "De meeste klanten nemen er eentje, want ze zijn nu maar €1 — zal ik er ook eentje bij doen?"
   ];
 
-  // state per item: { ok: number, fail: number }
   function defaultState(){ return LINES.map(_=>({ok:0, fail:0})) }
   function load(){
     try{
       const raw = localStorage.getItem(KEY);
       if(!raw) return defaultState();
       const arr = JSON.parse(raw);
-      // align op lengte
       const base = defaultState();
       if(Array.isArray(arr)){
         arr.forEach((row,i)=>{
@@ -110,9 +109,9 @@
       return base;
     }catch(e){ return defaultState(); }
   }
-  function save(state){ localStorage.setItem(KEY, JSON.stringify(state)); }
-  function sumOk(s){ return s.reduce((a,r)=>a+Number(r.ok||0),0) }
-  function sumFail(s){ return s.reduce((a,r)=>a+Number(r.fail||0),0) }
+  function save(s){ localStorage.setItem(KEY, JSON.stringify(s)); }
+  const sumOk = s => s.reduce((a,r)=>a+Number(r.ok||0),0);
+  const sumFail = s => s.reduce((a,r)=>a+Number(r.fail||0),0);
 
   const listEl = document.getElementById('list');
   const sumGrid = document.getElementById('summaryGrid');
@@ -125,14 +124,14 @@
       const card = document.createElement('div');
       card.className = 'card';
 
-      // LEFT: MISLUKT (-1)
+      /* LINKS: MISLUKT (−1 voegt mislukking toe) */
       const left = document.createElement('div');
       left.className = 'side';
       const failBtn = document.createElement('button');
       failBtn.className = 'danger';
       failBtn.textContent = "−1";
       failBtn.setAttribute('aria-label', `Mislukt +1 voor voorbeeld ${idx+1}`);
-      failBtn.addEventListener('click', ()=>change(idx, 'fail', +1)); // telt mislukking op
+      failBtn.addEventListener('click', ()=>change(idx,'fail',+1));
       const failCount = document.createElement('div');
       failCount.className = 'count';
       failCount.id = `fail-${idx}`;
@@ -142,19 +141,26 @@
       failLabel.textContent = 'mislukt';
       left.appendChild(failBtn); left.appendChild(failCount); left.appendChild(failLabel);
 
-      // MIDDLE: tekst
+      /* MIDDEN: tekst + mini-waarden (Mislukt — Gelukt) */
       const mid = document.createElement('div');
       mid.innerHTML = `<div class="line"><span class="pill">Voorbeeld ${idx+1}</span>${LINES[idx]}</div>
-                       <div class="meta">Gelukt: <strong id="ok-mini-${idx}">${row.ok}</strong>× — Mislukt: <strong id="fail-mini-${idx}">${row.fail}</strong>×</div>`;
+                       <div class="meta">Mislukt: <strong id="fail-mini-${idx}">${row.fail}</strong>× — Gelukt: <strong id="ok-mini-${idx}">${row.ok}</strong>×</div>`;
 
-      // RIGHT: GELUKT (+1)
+      /* RECHTS: GELUKT (+1 én corrigerende −1) */
       const right = document.createElement('div');
       right.className = 'side';
-      const okBtn = document.createElement('button');
-      okBtn.className = 'primary';
-      okBtn.textContent = "+1";
-      okBtn.setAttribute('aria-label', `Gelukt +1 voor voorbeeld ${idx+1}`);
-      okBtn.addEventListener('click', ()=>change(idx, 'ok', +1));
+      const okBtns = document.createElement('div');
+      okBtns.className = 'ok-buttons';
+      const okMinus = document.createElement('button');  // corrigeer gelukt naar beneden
+      okMinus.textContent = "−1";
+      okMinus.addEventListener('click', ()=>change(idx,'ok',-1));
+      const okPlus = document.createElement('button');
+      okPlus.className = 'primary';
+      okPlus.textContent = "+1";
+      okPlus.addEventListener('click', ()=>change(idx,'ok',+1));
+      okBtns.appendChild(okMinus);
+      okBtns.appendChild(okPlus);
+
       const okCount = document.createElement('div');
       okCount.className = 'count';
       okCount.id = `ok-${idx}`;
@@ -162,7 +168,7 @@
       const okLabel = document.createElement('div');
       okLabel.className = 'label';
       okLabel.textContent = 'gelukt';
-      right.appendChild(okBtn); right.appendChild(okCount); right.appendChild(okLabel);
+      right.appendChild(okBtns); right.appendChild(okCount); right.appendChild(okLabel);
 
       card.appendChild(left);
       card.appendChild(mid);
@@ -189,7 +195,8 @@
       fail.className = 'badge';
       fail.id = `sum-fail-${idx}`;
       fail.textContent = `Mislukt: ${row.fail}`;
-      vals.appendChild(ok); vals.appendChild(fail);
+      vals.appendChild(fail);  // eerst mislukt
+      vals.appendChild(ok);    // dan gelukt
       c.appendChild(t); c.appendChild(vals);
       sumGrid.appendChild(c);
     });
@@ -205,16 +212,19 @@
 
   function change(idx, kind, delta){
     const s = load();
-    if(kind==='ok'){ s[idx].ok = Math.max(0, Number(s[idx].ok||0) + delta); }
-    if(kind==='fail'){ s[idx].fail = Math.max(0, Number(s[idx].fail||0) + delta); }
+    if(kind==='ok'){
+      s[idx].ok = Math.max(0, Number(s[idx].ok||0) + delta);
+    } else if(kind==='fail'){
+      s[idx].fail = Math.max(0, Number(s[idx].fail||0) + delta);
+    }
     save(s);
-    // update UI snel
-    document.getElementById('ok-'+idx).textContent = s[idx].ok;
-    document.getElementById('fail-'+idx).textContent = s[idx].fail;
-    document.getElementById('ok-mini-'+idx).textContent = s[idx].ok;
-    document.getElementById('fail-mini-'+idx).textContent = s[idx].fail;
-    document.getElementById('sum-ok-'+idx).textContent = `Gelukt: ${s[idx].ok}`;
-    document.getElementById('sum-fail-'+idx).textContent = `Mislukt: ${s[idx].fail}`;
+    // update UI
+    document.getElementById(`ok-${idx}`).textContent = s[idx].ok;
+    document.getElementById(`fail-${idx}`).textContent = s[idx].fail;
+    document.getElementById(`ok-mini-${idx}`).textContent = s[idx].ok;
+    document.getElementById(`fail-mini-${idx}`).textContent = s[idx].fail;
+    document.getElementById(`sum-ok-${idx}`).textContent = `Gelukt: ${s[idx].ok}`;
+    document.getElementById(`sum-fail-${idx}`).textContent = `Mislukt: ${s[idx].fail}`;
     totalOkEl.textContent = sumOk(s);
     totalFailEl.textContent = sumFail(s);
   }
@@ -225,7 +235,7 @@
   });
 
   document.getElementById('exportBtn').addEventListener('click', ()=>{
-    const data = { version:"dual-1", state: load(), lines: LINES };
+    const data = { version:"dual-2", state: load(), lines: LINES };
     const blob = new Blob([JSON.stringify(data,null,2)], {type:"application/json"});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = "koekje_upsell_export.json"; a.click();
@@ -239,7 +249,6 @@
       try{
         const obj = JSON.parse(r.result);
         if(!obj || !Array.isArray(obj.state)) throw new Error("Ongeldig bestand");
-        // align lengte
         const base = defaultState();
         obj.state.forEach((row,i)=>{
           if(base[i]){ base[i].ok = Number(row.ok||0); base[i].fail = Number(row.fail||0); }
