@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Koekje Upsell Teller — Single</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --card: #f5f6f8;
+    --text: #000000;
+    --muted: #333333;
+    --primary: #0a7cff;
+    --danger: #d11a2a;
+    --border: #cfd3da;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { background: var(--bg); color: var(--text); }
+  body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+  header { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--border); padding: 14px 16px; }
+  h1 { font-size: 20px; margin: 0; color: var(--text); }
+  .sub { color: var(--muted); font-size: 14px; margin-top: 4px; }
+  .wrap { padding: 12px; max-width: 900px; margin: 0 auto; }
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 14px; }
+  button, input[type="file"], label.btn {
+    border: 1px solid var(--border); background: #ffffff; color: var(--text);
+    padding: 12px 14px; border-radius: 10px; font-size: 16px; line-height: 1;
+  }
+  button.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+  button.danger { background: var(--danger); color: #fff; border-color: var(--danger); }
+  .total { background: #ffffff; border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; font-size: 16px; display: inline-block; color: var(--text); }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 12px;
+          display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
+  .line { font-size: 17px; line-height: 1.4; color: var(--text); word-break: break-word; }
+  .muted { color: var(--muted); font-size: 14px; margin-top: 6px; }
+  .actions { display: grid; grid-auto-flow: column; gap: 8px; align-items: center; }
+  .count { min-width: 54px; text-align: center; font-weight: 800; font-size: 18px; color: var(--text);
+           background: #ffffff; border: 1px solid var(--border); border-radius: 8px; padding: 8px 0; }
+  .pill { display: inline-block; border: 1px solid var(--border); padding: 6px 10px; border-radius: 999px; font-size: 13px; background: #ffffff; color: var(--text); margin-right: 6px; }
+  .footer-space { height: 40px; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Koekje Upsell Teller</h1>
+    <div class="sub">Tik op +1 als een zin werkt. Alles wordt bewaard op je toestel.</div>
+  </header>
+
+  <div class="wrap">
+    <div class="controls">
+      <div class="total">Totaal successen: <strong id="totalVal">0</strong></div>
+      <button class="primary" id="exportBtn">Exporteer (JSON)</button>
+      <label for="importFile" class="btn">Importeer</label>
+      <input id="importFile" type="file" accept="application/json" style="display:none">
+      <button class="danger" id="resetBtn">Reset alles</button>
+    </div>
+
+    <div id="list" aria-live="polite"></div>
+
+    <div class="footer-space"></div>
+    <div class="muted">Tip: Zet op beginscherm via delen → <em>‘Zet op beginscherm’</em>.</div>
+  </div>
+
+<script>
+(function(){
+  const KEY = "koekje_upsell_tracker_single";
+  const LINES = [
+    "Zal ik er een lekker koekje bij doen? Vandaag maar één euro.",
+    "Vandaag zijn de koekjes in de aanbieding — €1 in plaats van €2!",
+    "Bij uw menu nemen de meeste klanten een koekje erbij, is maar één euro extra.",
+    "We hebben verse koekjes, vandaag voor de helft van de prijs!",
+    "Voor maar één euro extra krijgt u er een vers koekje bij — superlekker!",
+    "Bij die burger past eigenlijk perfect een koekje, vandaag maar €1.",
+    "We hebben vandaag een actie: koekjes voor maar €1 in plaats van €2!",
+    "Zal ik er een koekje bij doen? Kost vandaag maar één euro.",
+    "Mag ik u verleiden met een vers koekje voor slechts €1?",
+    "Onze koekjes zijn vandaag in de bonus — €1 per stuk!",
+    "Een lekker koekje erbij voor maar een euro, is dat wat?",
+    "Vandaag halve prijs op onze koekjes — €1 in plaats van €2!",
+    "Bij uw drankje past perfect een koekje, vandaag maar één euro extra.",
+    "Voor €1 krijg je er een heerlijk warm koekje bij, vers uit de oven!",
+    "De meeste klanten nemen er eentje, want ze zijn nu maar €1 — zal ik er ook eentje bij doen?"
+  ];
+
+  const listEl = document.getElementById('list');
+  const totalVal = document.getElementById('totalVal');
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (!raw) return LINES.map((_, i) => ({ id: i+1, count: 0 }));
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed) || parsed.length !== LINES.length) {
+        const base = LINES.map((_, i) => ({ id: i+1, count: 0 }));
+        if (Array.isArray(parsed)) parsed.forEach((row, i) => { if (base[i]) base[i].count = Number(row.count||0); });
+        return base;
+      }
+      return parsed.map((r, i) => ({ id: i+1, count: Number(r.count || 0) }));
+    } catch(e) {
+      return LINES.map((_, i) => ({ id: i+1, count: 0 }));
+    }
+  }
+
+  function save(state) { localStorage.setItem(KEY, JSON.stringify(state)); }
+  function sum(state) { return state.reduce((acc, r) => acc + (Number(r.count)||0), 0); }
+
+  function render() {
+    listEl.innerHTML = "";
+    const state = load();
+    totalVal.textContent = sum(state);
+
+    state.forEach((row, idx) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      const left = document.createElement('div');
+      left.innerHTML = `<div class="line"><span class="pill">Voorbeeld ${idx+1}</span>${LINES[idx]}</div>
+                        <div class="muted">Gelukt: <strong id="count-${idx}">${row.count}</strong>x</div>`;
+
+      const right = document.createElement('div');
+      right.className = 'actions';
+
+      const minus = document.createElement('button');
+      minus.textContent = "−1";
+      minus.addEventListener('click', () => change(idx, -1));
+
+      const count = document.createElement('div');
+      count.className = 'count';
+      count.id = `big-${idx}`;
+      count.textContent = row.count;
+
+      const plus = document.createElement('button');
+      plus.textContent = "+1";
+      plus.className = "primary";
+      plus.addEventListener('click', () => change(idx, +1));
+
+      right.appendChild(minus);
+      right.appendChild(count);
+      right.appendChild(plus);
+
+      card.appendChild(left);
+      card.appendChild(right);
+      listEl.appendChild(card);
+    });
+  }
+
+  function change(idx, delta) {
+    const state = load();
+    state[idx].count = Math.max(0, (Number(state[idx].count)||0) + delta);
+    save(state);
+    document.getElementById(`count-${idx}`).textContent = state[idx].count;
+    document.getElementById(`big-${idx}`).textContent = state[idx].count;
+    totalVal.textContent = sum(state);
+  }
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    if (!confirm("Alles terug naar 0?")) return;
+    const state = LINES.map((_, i) => ({ id: i+1, count: 0 }));
+    save(state); render();
+  });
+
+  document.getElementById('exportBtn').addEventListener('click', () => {
+    const data = { version: "single", lines: LINES, state: load() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = "koekje_upsell_export.json"; a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('importFile').addEventListener('change', (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const obj = JSON.parse(reader.result);
+        if (!obj || !Array.isArray(obj.state)) throw new Error("Ongeldig bestand");
+        const next = LINES.map((_, i) => ({ id: i+1, count: 0 }));
+        obj.state.forEach((row, i) => { if (next[i]) next[i].count = Number(row.count||0); });
+        save(next); render(); alert("Import gelukt!");
+      } catch(err) { alert("Import mislukt. Controleer het bestand."); }
+    };
+    reader.readAsText(file); e.target.value = "";
+  });
+
+  if (!localStorage.getItem(KEY)) { save(LINES.map((_, i) => ({ id: i+1, count: 0 }))); }
+  render();
+})();
+</script>
+</body>
+</html>
