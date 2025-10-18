@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Koekje Upsell Teller — Single</title>
+<title>Koekje Upsell Teller</title>
 <style>
   :root {
     --bg: #ffffff;
@@ -15,20 +15,19 @@
     --border: #cfd3da;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { background: var(--bg); color: var(--text); }
-  body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+  html, body { background: var(--bg); color: var(--text); margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
   header { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--border); padding: 14px 16px; }
   h1 { font-size: 20px; margin: 0; color: var(--text); }
   .sub { color: var(--muted); font-size: 14px; margin-top: 4px; }
-  .wrap { padding: 12px; max-width: 900px; margin: 0 auto; }
-  .controls { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 14px; }
-  button, input[type="file"], label.btn {
-    border: 1px solid var(--border); background: #ffffff; color: var(--text);
-    padding: 12px 14px; border-radius: 10px; font-size: 16px; line-height: 1;
-  }
+  .wrap { padding: 12px; max-width: 960px; margin: 0 auto; }
+
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 14px; align-items: center; }
+  button, label.btn { border: 1px solid var(--border); background: #ffffff; color: var(--text); padding: 10px 12px; border-radius: 10px; font-size: 15px; line-height: 1; }
   button.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
   button.danger { background: var(--danger); color: #fff; border-color: var(--danger); }
-  .total { background: #ffffff; border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; font-size: 16px; display: inline-block; color: var(--text); }
+  .total { background: #ffffff; border: 1px solid var(--border); border-radius: 12px; padding: 8px 10px; font-size: 16px; display: inline-block; color: var(--text); }
+  input[type="file"] { display: none; }
+
   .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 12px;
           display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
   .line { font-size: 17px; line-height: 1.4; color: var(--text); word-break: break-word; }
@@ -37,13 +36,30 @@
   .count { min-width: 54px; text-align: center; font-weight: 800; font-size: 18px; color: var(--text);
            background: #ffffff; border: 1px solid var(--border); border-radius: 8px; padding: 8px 0; }
   .pill { display: inline-block; border: 1px solid var(--border); padding: 6px 10px; border-radius: 999px; font-size: 13px; background: #ffffff; color: var(--text); margin-right: 6px; }
-  .footer-space { height: 40px; }
+
+  /* Overzicht – aparte vakjes */
+  .summary { margin: 24px 0 12px; }
+  .summary h2 { font-size: 18px; margin: 0 0 10px; }
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 10px;
+  }
+  .summary-card {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+  }
+  .summary-title { font-size: 14px; color: var(--muted); margin-bottom: 6px; }
+  .summary-value { font-size: 22px; font-weight: 800; }
+  .footer-note { color: var(--muted); font-size: 13px; margin: 14px 2px; }
 </style>
 </head>
 <body>
   <header>
     <h1>Koekje Upsell Teller</h1>
-    <div class="sub">Tik op +1 als een zin werkt. Alles wordt bewaard op je toestel.</div>
+    <div class="sub">Tik op +1 als een zin werkt. Alles wordt bewaard op dit toestel.</div>
   </header>
 
   <div class="wrap">
@@ -51,19 +67,23 @@
       <div class="total">Totaal successen: <strong id="totalVal">0</strong></div>
       <button class="primary" id="exportBtn">Exporteer (JSON)</button>
       <label for="importFile" class="btn">Importeer</label>
-      <input id="importFile" type="file" accept="application/json" style="display:none">
+      <input id="importFile" type="file" accept="application/json">
       <button class="danger" id="resetBtn">Reset alles</button>
     </div>
 
     <div id="list" aria-live="polite"></div>
 
-    <div class="footer-space"></div>
-    <div class="muted">Tip: Zet op beginscherm via delen → <em>‘Zet op beginscherm’</em>.</div>
+    <!-- Overzicht per voorbeeld in aparte vakjes -->
+    <div class="summary">
+      <h2>Overzicht per voorbeeld</h2>
+      <div id="summaryGrid" class="summary-grid"></div>
+      <div class="footer-note">Dit overzicht werkt direct mee met de +1/−1 knoppen hierboven.</div>
+    </div>
   </div>
 
 <script>
 (function(){
-  const KEY = "koekje_upsell_tracker_single";
+  const KEY = "koekje_upsell_tracker_single_v2";
   const LINES = [
     "Zal ik er een lekker koekje bij doen? Vandaag maar één euro.",
     "Vandaag zijn de koekjes in de aanbieding — €1 in plaats van €2!",
@@ -84,6 +104,7 @@
 
   const listEl = document.getElementById('list');
   const totalVal = document.getElementById('totalVal');
+  const summaryGrid = document.getElementById('summaryGrid');
 
   function load() {
     try {
@@ -104,11 +125,8 @@
   function save(state) { localStorage.setItem(KEY, JSON.stringify(state)); }
   function sum(state) { return state.reduce((acc, r) => acc + (Number(r.count)||0), 0); }
 
-  function render() {
+  function renderList(state) {
     listEl.innerHTML = "";
-    const state = load();
-    totalVal.textContent = sum(state);
-
     state.forEach((row, idx) => {
       const card = document.createElement('div');
       card.className = 'card';
@@ -144,12 +162,39 @@
     });
   }
 
+  function renderSummary(state) {
+    summaryGrid.innerHTML = "";
+    state.forEach((row, idx) => {
+      const card = document.createElement('div');
+      card.className = 'summary-card';
+      const title = document.createElement('div');
+      title.className = 'summary-title';
+      title.textContent = `Voorbeeld ${idx+1}`;
+      const val = document.createElement('div');
+      val.className = 'summary-value';
+      val.id = `sum-${idx}`;
+      val.textContent = `${row.count}× gelukt`;
+      card.appendChild(title);
+      card.appendChild(val);
+      summaryGrid.appendChild(card);
+    });
+  }
+
+  function render() {
+    const state = load();
+    totalVal.textContent = sum(state);
+    renderList(state);
+    renderSummary(state);
+  }
+
   function change(idx, delta) {
     const state = load();
     state[idx].count = Math.max(0, (Number(state[idx].count)||0) + delta);
     save(state);
+    // Update UI snel
     document.getElementById(`count-${idx}`).textContent = state[idx].count;
     document.getElementById(`big-${idx}`).textContent = state[idx].count;
+    document.getElementById(`sum-${idx}`).textContent = `${state[idx].count}× gelukt`;
     totalVal.textContent = sum(state);
   }
 
@@ -160,7 +205,7 @@
   });
 
   document.getElementById('exportBtn').addEventListener('click', () => {
-    const data = { version: "single", lines: LINES, state: load() };
+    const data = { version: "single-summary", lines: LINES, state: load() };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = "koekje_upsell_export.json"; a.click();
