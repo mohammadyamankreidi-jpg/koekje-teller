@@ -5,85 +5,76 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>Koekje Upsell Teller</title>
 <style>
-  :root {
-    --bg: #ffffff;
-    --card: #f5f6f8;
-    --text: #000000;
-    --muted: #333333;
-    --primary: #0a7cff;
-    --danger: #d11a2a;
-    --border: #cfd3da;
+  :root{
+    --bg:#ffffff;--card:#f5f6f8;--text:#000;--muted:#444;
+    --primary:#0a7cff;--danger:#d11a2a;--border:#cfd3da;
   }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { background: var(--bg); color: var(--text); margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
-  header { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--border); padding: 14px 16px; }
-  h1 { font-size: 20px; margin: 0; color: var(--text); }
-  .sub { color: var(--muted); font-size: 14px; margin-top: 4px; }
-  .wrap { padding: 12px; max-width: 960px; margin: 0 auto; }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{background:var(--bg);color:var(--text);margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--border);padding:14px 16px}
+  h1{margin:0;font-size:20px}
+  .sub{color:var(--muted);font-size:14px;margin-top:4px}
+  .wrap{padding:12px;max-width:960px;margin:0 auto}
+  .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 14px}
+  .total{background:#fff;border:1px solid var(--border);border-radius:12px;padding:8px 10px;font-size:16px;display:inline-block}
+  button,label.btn{border:1px solid var(--border);background:#fff;color:var(--text);padding:10px 12px;border-radius:10px;font-size:15px;line-height:1}
+  button.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+  button.danger{background:var(--danger);color:#fff;border-color:var(--danger)}
+  input[type=file]{display:none}
 
-  .controls { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 14px; align-items: center; }
-  button, label.btn { border: 1px solid var(--border); background: #ffffff; color: var(--text); padding: 10px 12px; border-radius: 10px; font-size: 15px; line-height: 1; }
-  button.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
-  button.danger { background: var(--danger); color: #fff; border-color: var(--danger); }
-  .total { background: #ffffff; border: 1px solid var(--border); border-radius: 12px; padding: 8px 10px; font-size: 16px; display: inline-block; color: var(--text); }
-  input[type="file"] { display: none; }
-
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 12px;
-          display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
-  .line { font-size: 17px; line-height: 1.4; color: var(--text); word-break: break-word; }
-  .muted { color: var(--muted); font-size: 14px; margin-top: 6px; }
-  .actions { display: grid; grid-auto-flow: column; gap: 8px; align-items: center; }
-  .count { min-width: 54px; text-align: center; font-weight: 800; font-size: 18px; color: var(--text);
-           background: #ffffff; border: 1px solid var(--border); border-radius: 8px; padding: 8px 0; }
-  .pill { display: inline-block; border: 1px solid var(--border); padding: 6px 10px; border-radius: 999px; font-size: 13px; background: #ffffff; color: var(--text); margin-right: 6px; }
-
-  /* Overzicht – aparte vakjes */
-  .summary { margin: 24px 0 12px; }
-  .summary h2 { font-size: 18px; margin: 0 0 10px; }
-  .summary-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-    gap: 10px;
+  .card{
+    background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px;margin-bottom:12px;
+    display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center
   }
-  .summary-card {
-    background: #ffffff;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 12px;
+  .side{
+    display:grid;gap:6px;justify-items:center
   }
-  .summary-title { font-size: 14px; color: var(--muted); margin-bottom: 6px; }
-  .summary-value { font-size: 22px; font-weight: 800; }
-  .footer-note { color: var(--muted); font-size: 13px; margin: 14px 2px; }
+  .side .label{font-size:12px;color:var(--muted)}
+  .count{
+    min-width:54px;text-align:center;font-weight:800;font-size:18px;color:var(--text);
+    background:#fff;border:1px solid var(--border);border-radius:8px;padding:8px 0
+  }
+  .line{font-size:17px;line-height:1.4;word-break:break-word}
+  .meta{color:var(--muted);font-size:13px;margin-top:6px}
+  .pill{display:inline-block;border:1px solid var(--border);padding:6px 10px;border-radius:999px;font-size:13px;background:#fff;margin-right:6px}
+
+  /* Overzicht onderaan */
+  .summary{margin:24px 0 12px}
+  .summary h2{font-size:18px;margin:0 0 10px}
+  .summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+  .summary-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px}
+  .summary-title{font-size:14px;color:var(--muted);margin-bottom:6px}
+  .summary-values{display:flex;gap:10px;flex-wrap:wrap}
+  .badge{border:1px solid var(--border);border-radius:999px;padding:6px 10px;font-size:13px;background:#f6f8ff}
 </style>
 </head>
 <body>
-  <header>
-    <h1>Koekje Upsell Teller</h1>
-    <div class="sub">Tik op +1 als een zin werkt. Alles wordt bewaard op dit toestel.</div>
-  </header>
+<header>
+  <h1>Koekje Upsell Teller</h1>
+  <div class="sub">Links = mislukt (−1), rechts = gelukt (+1). Alles wordt lokaal bewaard op dit toestel.</div>
+</header>
 
-  <div class="wrap">
-    <div class="controls">
-      <div class="total">Totaal successen: <strong id="totalVal">0</strong></div>
-      <button class="primary" id="exportBtn">Exporteer (JSON)</button>
-      <label for="importFile" class="btn">Importeer</label>
-      <input id="importFile" type="file" accept="application/json">
-      <button class="danger" id="resetBtn">Reset alles</button>
-    </div>
-
-    <div id="list" aria-live="polite"></div>
-
-    <!-- Overzicht per voorbeeld in aparte vakjes -->
-    <div class="summary">
-      <h2>Overzicht per voorbeeld</h2>
-      <div id="summaryGrid" class="summary-grid"></div>
-      <div class="footer-note">Dit overzicht werkt direct mee met de +1/−1 knoppen hierboven.</div>
-    </div>
+<div class="wrap">
+  <div class="controls">
+    <div class="total">Totaal successen: <strong id="totalOk">0</strong></div>
+    <div class="total">Totaal mislukkingen: <strong id="totalFail">0</strong></div>
+    <button class="primary" id="exportBtn">Exporteer (JSON)</button>
+    <label for="importFile" class="btn">Importeer</label>
+    <input id="importFile" type="file" accept="application/json">
+    <button class="danger" id="resetBtn">Reset alles</button>
   </div>
+
+  <div id="list" aria-live="polite"></div>
+
+  <div class="summary">
+    <h2>Overzicht per voorbeeld</h2>
+    <div id="summaryGrid" class="summary-grid"></div>
+  </div>
+</div>
 
 <script>
 (function(){
-  const KEY = "koekje_upsell_tracker_single_v2";
+  const KEY = "koekje_upsell_tracker_dual_v1";
   const LINES = [
     "Zal ik er een lekker koekje bij doen? Vandaag maar één euro.",
     "Vandaag zijn de koekjes in de aanbieding — €1 in plaats van €2!",
@@ -102,135 +93,166 @@
     "De meeste klanten nemen er eentje, want ze zijn nu maar €1 — zal ik er ook eentje bij doen?"
   ];
 
-  const listEl = document.getElementById('list');
-  const totalVal = document.getElementById('totalVal');
-  const summaryGrid = document.getElementById('summaryGrid');
-
-  function load() {
-    try {
+  // state per item: { ok: number, fail: number }
+  function defaultState(){ return LINES.map(_=>({ok:0, fail:0})) }
+  function load(){
+    try{
       const raw = localStorage.getItem(KEY);
-      if (!raw) return LINES.map((_, i) => ({ id: i+1, count: 0 }));
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed) || parsed.length !== LINES.length) {
-        const base = LINES.map((_, i) => ({ id: i+1, count: 0 }));
-        if (Array.isArray(parsed)) parsed.forEach((row, i) => { if (base[i]) base[i].count = Number(row.count||0); });
-        return base;
+      if(!raw) return defaultState();
+      const arr = JSON.parse(raw);
+      // align op lengte
+      const base = defaultState();
+      if(Array.isArray(arr)){
+        arr.forEach((row,i)=>{
+          if(base[i]){ base[i].ok = Number(row.ok||0); base[i].fail = Number(row.fail||0); }
+        });
       }
-      return parsed.map((r, i) => ({ id: i+1, count: Number(r.count || 0) }));
-    } catch(e) {
-      return LINES.map((_, i) => ({ id: i+1, count: 0 }));
-    }
+      return base;
+    }catch(e){ return defaultState(); }
   }
+  function save(state){ localStorage.setItem(KEY, JSON.stringify(state)); }
+  function sumOk(s){ return s.reduce((a,r)=>a+Number(r.ok||0),0) }
+  function sumFail(s){ return s.reduce((a,r)=>a+Number(r.fail||0),0) }
 
-  function save(state) { localStorage.setItem(KEY, JSON.stringify(state)); }
-  function sum(state) { return state.reduce((acc, r) => acc + (Number(r.count)||0), 0); }
+  const listEl = document.getElementById('list');
+  const sumGrid = document.getElementById('summaryGrid');
+  const totalOkEl = document.getElementById('totalOk');
+  const totalFailEl = document.getElementById('totalFail');
 
-  function renderList(state) {
+  function renderList(state){
     listEl.innerHTML = "";
-    state.forEach((row, idx) => {
+    state.forEach((row,idx)=>{
       const card = document.createElement('div');
       card.className = 'card';
 
+      // LEFT: MISLUKT (-1)
       const left = document.createElement('div');
-      left.innerHTML = `<div class="line"><span class="pill">Voorbeeld ${idx+1}</span>${LINES[idx]}</div>
-                        <div class="muted">Gelukt: <strong id="count-${idx}">${row.count}</strong>x</div>`;
+      left.className = 'side';
+      const failBtn = document.createElement('button');
+      failBtn.className = 'danger';
+      failBtn.textContent = "−1";
+      failBtn.setAttribute('aria-label', `Mislukt +1 voor voorbeeld ${idx+1}`);
+      failBtn.addEventListener('click', ()=>change(idx, 'fail', +1)); // telt mislukking op
+      const failCount = document.createElement('div');
+      failCount.className = 'count';
+      failCount.id = `fail-${idx}`;
+      failCount.textContent = row.fail;
+      const failLabel = document.createElement('div');
+      failLabel.className = 'label';
+      failLabel.textContent = 'mislukt';
+      left.appendChild(failBtn); left.appendChild(failCount); left.appendChild(failLabel);
 
+      // MIDDLE: tekst
+      const mid = document.createElement('div');
+      mid.innerHTML = `<div class="line"><span class="pill">Voorbeeld ${idx+1}</span>${LINES[idx]}</div>
+                       <div class="meta">Gelukt: <strong id="ok-mini-${idx}">${row.ok}</strong>× — Mislukt: <strong id="fail-mini-${idx}">${row.fail}</strong>×</div>`;
+
+      // RIGHT: GELUKT (+1)
       const right = document.createElement('div');
-      right.className = 'actions';
-
-      const minus = document.createElement('button');
-      minus.textContent = "−1";
-      minus.addEventListener('click', () => change(idx, -1));
-
-      const count = document.createElement('div');
-      count.className = 'count';
-      count.id = `big-${idx}`;
-      count.textContent = row.count;
-
-      const plus = document.createElement('button');
-      plus.textContent = "+1";
-      plus.className = "primary";
-      plus.addEventListener('click', () => change(idx, +1));
-
-      right.appendChild(minus);
-      right.appendChild(count);
-      right.appendChild(plus);
+      right.className = 'side';
+      const okBtn = document.createElement('button');
+      okBtn.className = 'primary';
+      okBtn.textContent = "+1";
+      okBtn.setAttribute('aria-label', `Gelukt +1 voor voorbeeld ${idx+1}`);
+      okBtn.addEventListener('click', ()=>change(idx, 'ok', +1));
+      const okCount = document.createElement('div');
+      okCount.className = 'count';
+      okCount.id = `ok-${idx}`;
+      okCount.textContent = row.ok;
+      const okLabel = document.createElement('div');
+      okLabel.className = 'label';
+      okLabel.textContent = 'gelukt';
+      right.appendChild(okBtn); right.appendChild(okCount); right.appendChild(okLabel);
 
       card.appendChild(left);
+      card.appendChild(mid);
       card.appendChild(right);
       listEl.appendChild(card);
     });
   }
 
-  function renderSummary(state) {
-    summaryGrid.innerHTML = "";
-    state.forEach((row, idx) => {
-      const card = document.createElement('div');
-      card.className = 'summary-card';
-      const title = document.createElement('div');
-      title.className = 'summary-title';
-      title.textContent = `Voorbeeld ${idx+1}`;
-      const val = document.createElement('div');
-      val.className = 'summary-value';
-      val.id = `sum-${idx}`;
-      val.textContent = `${row.count}× gelukt`;
-      card.appendChild(title);
-      card.appendChild(val);
-      summaryGrid.appendChild(card);
+  function renderSummary(state){
+    sumGrid.innerHTML = "";
+    state.forEach((row,idx)=>{
+      const c = document.createElement('div');
+      c.className = 'summary-card';
+      const t = document.createElement('div');
+      t.className = 'summary-title';
+      t.textContent = `Voorbeeld ${idx+1}`;
+      const vals = document.createElement('div');
+      vals.className = 'summary-values';
+      const ok = document.createElement('div');
+      ok.className = 'badge';
+      ok.id = `sum-ok-${idx}`;
+      ok.textContent = `Gelukt: ${row.ok}`;
+      const fail = document.createElement('div');
+      fail.className = 'badge';
+      fail.id = `sum-fail-${idx}`;
+      fail.textContent = `Mislukt: ${row.fail}`;
+      vals.appendChild(ok); vals.appendChild(fail);
+      c.appendChild(t); c.appendChild(vals);
+      sumGrid.appendChild(c);
     });
   }
 
-  function render() {
-    const state = load();
-    totalVal.textContent = sum(state);
-    renderList(state);
-    renderSummary(state);
+  function render(){
+    const s = load();
+    totalOkEl.textContent = sumOk(s);
+    totalFailEl.textContent = sumFail(s);
+    renderList(s);
+    renderSummary(s);
   }
 
-  function change(idx, delta) {
-    const state = load();
-    state[idx].count = Math.max(0, (Number(state[idx].count)||0) + delta);
-    save(state);
-    // Update UI snel
-    document.getElementById(`count-${idx}`).textContent = state[idx].count;
-    document.getElementById(`big-${idx}`).textContent = state[idx].count;
-    document.getElementById(`sum-${idx}`).textContent = `${state[idx].count}× gelukt`;
-    totalVal.textContent = sum(state);
+  function change(idx, kind, delta){
+    const s = load();
+    if(kind==='ok'){ s[idx].ok = Math.max(0, Number(s[idx].ok||0) + delta); }
+    if(kind==='fail'){ s[idx].fail = Math.max(0, Number(s[idx].fail||0) + delta); }
+    save(s);
+    // update UI snel
+    document.getElementById('ok-'+idx).textContent = s[idx].ok;
+    document.getElementById('fail-'+idx).textContent = s[idx].fail;
+    document.getElementById('ok-mini-'+idx).textContent = s[idx].ok;
+    document.getElementById('fail-mini-'+idx).textContent = s[idx].fail;
+    document.getElementById('sum-ok-'+idx).textContent = `Gelukt: ${s[idx].ok}`;
+    document.getElementById('sum-fail-'+idx).textContent = `Mislukt: ${s[idx].fail}`;
+    totalOkEl.textContent = sumOk(s);
+    totalFailEl.textContent = sumFail(s);
   }
 
-  document.getElementById('resetBtn').addEventListener('click', () => {
-    if (!confirm("Alles terug naar 0?")) return;
-    const state = LINES.map((_, i) => ({ id: i+1, count: 0 }));
-    save(state); render();
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    if(!confirm("Alles (gelukt + mislukt) terug naar 0?")) return;
+    const s = defaultState(); save(s); render();
   });
 
-  document.getElementById('exportBtn').addEventListener('click', () => {
-    const data = { version: "single-summary", lines: LINES, state: load() };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  document.getElementById('exportBtn').addEventListener('click', ()=>{
+    const data = { version:"dual-1", state: load(), lines: LINES };
+    const blob = new Blob([JSON.stringify(data,null,2)], {type:"application/json"});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = "koekje_upsell_export.json"; a.click();
     URL.revokeObjectURL(url);
   });
 
-  document.getElementById('importFile').addEventListener('change', (e) => {
-    const file = e.target.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const obj = JSON.parse(reader.result);
-        if (!obj || !Array.isArray(obj.state)) throw new Error("Ongeldig bestand");
-        const next = LINES.map((_, i) => ({ id: i+1, count: 0 }));
-        obj.state.forEach((row, i) => { if (next[i]) next[i].count = Number(row.count||0); });
-        save(next); render(); alert("Import gelukt!");
-      } catch(err) { alert("Import mislukt. Controleer het bestand."); }
+  document.getElementById('importFile').addEventListener('change', (e)=>{
+    const f = e.target.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = ()=>{
+      try{
+        const obj = JSON.parse(r.result);
+        if(!obj || !Array.isArray(obj.state)) throw new Error("Ongeldig bestand");
+        // align lengte
+        const base = defaultState();
+        obj.state.forEach((row,i)=>{
+          if(base[i]){ base[i].ok = Number(row.ok||0); base[i].fail = Number(row.fail||0); }
+        });
+        save(base); render(); alert("Import gelukt!");
+      }catch(err){ alert("Import mislukt. Controleer het bestand."); }
     };
-    reader.readAsText(file); e.target.value = "";
+    r.readAsText(f); e.target.value="";
   });
 
-  if (!localStorage.getItem(KEY)) { save(LINES.map((_, i) => ({ id: i+1, count: 0 }))); }
+  if(!localStorage.getItem(KEY)) save(defaultState());
   render();
 })();
 </script>
 </body>
 </html>
-<!-- test update -->
